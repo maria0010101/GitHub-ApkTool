@@ -1,0 +1,66 @@
+name: Build APK with Apktool
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # 支援在 GitHub 介面手動點擊執行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 檢出專案代碼
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. 設定 Java 執行環境
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3. 下載最新版 Apktool 與 Uber-APK-Signer
+      - name: Setup Tools (Apktool & Signer)
+        run: |
+          mkdir -p tools
+          # 下載 Apktool JAR
+          curl -sL https://api.github.com/repos/iBotPeaches/Apktool/releases/latest \
+            | grep "browser_download_url.*jar" \
+            | cut -d : -f 2,3 \
+            | tr -d '\"' \
+            | wget -qi - -O tools/apktool.jar
+
+          # 下載 Uber-APK-Signer
+          curl -sL https://api.github.com/repos/patrickfav/uber-apk-signer/releases/latest \
+            | grep "browser_download_url.*jar" \
+            | cut -d : -f 2,3 \
+            | tr -d '\"' \
+            | wget -qi - -O tools/uber-apk-signer.jar
+
+      # 4. 使用 Apktool 重建 APK
+      - name: Rebuild APK with Apktool
+        run: |
+          mkdir -p output
+          # 若專案反編譯內容在根目錄，使用 . ；若在特定子資料夾請替換路徑
+          java -jar tools/apktool.jar b . -o output/unsigned.apk --use-aapt2
+
+      # 5. 自動對 APK 進行對齊 (Zipalign) 與 Debug 簽名
+      - name: Sign APK
+        run: |
+          java -jar tools/uber-apk-signer.jar \
+            --apks output/unsigned.apk \
+            --out output/ \
+            --allowResign \
+            --overwrite
+
+      # 6. 上傳最終產出的 APK 檔案供下載
+      - name: Upload Built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuilt-apk
+          path: output/*-aligned-debugSigned.apk
+          retention-days: 7

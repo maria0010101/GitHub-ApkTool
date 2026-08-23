@@ -2,6 +2,8 @@ package com.example.myapplication.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ImportExport
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
@@ -85,7 +88,30 @@ fun ProjectListScreen(viewModel: ProjectViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var projectToEdit by remember { mutableStateOf<GitProject?>(null) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showImportExportDialog by remember { mutableStateOf(false) }
     var isSearchExpanded by remember { mutableStateOf(false) }
+
+    var pendingImportOverwrite by remember { mutableStateOf(false) }
+    var pendingImportAutoCheck by remember { mutableStateOf(true) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.exportToFile(it, context) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            viewModel.importFromFile(
+                uri = it,
+                context = context,
+                overwrite = pendingImportOverwrite,
+                autoCheckUpdates = pendingImportAutoCheck
+            )
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.messageEvent.collect { msg ->
@@ -116,6 +142,19 @@ fun ProjectListScreen(viewModel: ProjectViewModel) {
                             imageVector = if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
                             contentDescription = "搜尋"
                         )
+                    }
+                    IconButton(
+                        onClick = { showImportExportDialog = true },
+                        enabled = !uiState.isExportingOrImporting
+                    ) {
+                        if (uiState.isExportingOrImporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(Icons.Default.ImportExport, contentDescription = "匯出與匯入追蹤清單")
+                        }
                     }
                     IconButton(
                         onClick = { viewModel.checkAllUpdates() },
@@ -240,6 +279,28 @@ fun ProjectListScreen(viewModel: ProjectViewModel) {
             onDismiss = { showSettingsDialog = false },
             onSaveToken = { token ->
                 viewModel.saveGithubToken(token)
+            }
+        )
+    }
+
+    if (showImportExportDialog) {
+        ImportExportDialog(
+            projectCount = projects.size,
+            onDismiss = { showImportExportDialog = false },
+            onExportFile = {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                exportLauncher.launch("github_apktool_backup_$timestamp.json")
+            },
+            onGetExportJson = {
+                viewModel.getExportJsonString()
+            },
+            onImportFile = { overwrite, autoCheck ->
+                pendingImportOverwrite = overwrite
+                pendingImportAutoCheck = autoCheck
+                importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+            },
+            onImportText = { text, overwrite, autoCheck ->
+                viewModel.importFromText(text, overwrite, autoCheck)
             }
         )
     }

@@ -19,7 +19,9 @@
 
 * 📦 **GitHub 專案追蹤**：支援以 `https://github.com/owner/repo` 網址直接貼上或輸入 `owner/repo` 加入追蹤。
 * 🔄 **即時檢查發佈版本**：支援單一專案檢查與一鍵全部專案更新檢查，自動獲取最新 Release Tag 與更新時間。
-* ⚡ **智能 APK 匹配**：自動解析 Release Assets 中的 `.apk` 安裝包，優先適配 universal 與 arm64-v8a 架構。
+* 🚀 **支援 Pre-release 與各類發佈模式**：具備智能回退機制，完美支援僅發佈 Pre-release (如 RC、Beta 等候選版本) 的專案（如 `ReSukiSU`）。
+* 💾 **追蹤清單匯出與匯入**：支援一鍵匯出 JSON 備份檔案、剪貼簿複製分享，並支援從備份檔案或純文字網址清單智慧匯入（支援合併與覆蓋）。
+* ⚡ **智能 APK 匹配**：自動解析 Release Assets 中的 `.apk` 安裝包，優先適配 arm64-v8a 與 universal 架構，並自動過濾排除除錯版 (debug)。
 * 📥 **原生背景下載**：整合 Android 原生 `DownloadManager`，下載進度即時通知與錯誤重試。
 * 📲 **一鍵安裝 APK**：整合 `FileProvider` 與安裝 Intent，下載完成後可直接在 App 內啟動安裝程式。
 * 🔍 **即時搜尋與過濾**：快速搜尋 Repo 名稱、擁有者或自訂顯示名稱。
@@ -63,6 +65,7 @@ com.example.myapplication/
 │   ├── screens/        # Compose UI 畫面與對話框
 │   │   ├── ProjectListScreen.kt
 │   │   ├── AddEditProjectDialog.kt
+│   │   ├── ImportExportDialog.kt
 │   │   └── SettingsDialog.kt
 │   ├── theme/          # Material 3 主題配置
 │   └── viewmodel/      # ProjectViewModel 狀態管理

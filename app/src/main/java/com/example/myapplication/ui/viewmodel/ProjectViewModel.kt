@@ -2,15 +2,15 @@ package com.example.myapplication.ui.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.local.AppDatabase
 import com.example.myapplication.data.local.GitProject
 import com.example.myapplication.data.remote.RetrofitClient
 import com.example.myapplication.data.repository.GitProjectRepository
 import com.example.myapplication.downloader.ApkDownloader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,9 +22,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 data class ProjectUiState(
     val isCheckingUpdates: Boolean = false,
+    val isExportingOrImporting: Boolean = false,
     val searchQuery: String = "",
     val githubToken: String = "",
     val activeCheckingProjectIds: Set<Long> = emptySet()
@@ -212,25 +217,124 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         apkDownloader.downloadApk(url, fileName, "${project.name} ${project.latestVersion}")
     }
 
+    suspend fun getExportJsonString(): String {
+        return repository.exportProjectsJson()
+    }
+
+    fun exportToFile(uri: Uri, context: Context) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExportingOrImporting = true) }
+            try {
+                val json = repository.exportProjectsJson()
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        OutputStreamWriter(outputStream).use { writer ->
+                            writer.write(json)
+                        }
+                    }
+                }
+                _messageEvent.emit("追蹤清單已成功匯出至指定檔案！")
+            } catch (e: Exception) {
+                _messageEvent.emit("匯出失敗: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isExportingOrImporting = false) }
+            }
+        }
+    }
+
+    fun importFromFile(
+        uri: Uri,
+        context: Context,
+        overwrite: Boolean = false,
+        autoCheckUpdates: Boolean = true
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExportingOrImporting = true) }
+            try {
+                val content = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                            reader.readText()
+                        }
+                    }
+                }
+
+                if (content.isNullOrBlank()) {
+                    _messageEvent.emit("選取的檔案內容為空")
+                    _uiState.update { it.copy(isExportingOrImporting = false) }
+                    return@launch
+                }
+
+                val result = repository.importProjectsFromJson(content, overwrite)
+                result.fold(
+                    onSuccess = { count ->
+                        _messageEvent.emit("成功匯入 $count 個專案！")
+                        if (autoCheckUpdates && count > 0) {
+                            checkAllUpdates()
+                        }
+                    },
+                    onFailure = { error ->
+                        _messageEvent.emit("匯入失敗: ${error.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                _messageEvent.emit("讀取檔案失敗: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isExportingOrImporting = false) }
+            }
+        }
+    }
+
+    fun importFromText(
+        text: String,
+        overwrite: Boolean = false,
+        autoCheckUpdates: Boolean = true
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExportingOrImporting = true) }
+            try {
+                val result = repository.importProjectsFromJson(text, overwrite)
+                result.fold(
+                    onSuccess = { count ->
+                        _messageEvent.emit("成功匯入 $count 個專案！")
+                        if (autoCheckUpdates && count > 0) {
+                            checkAllUpdates()
+                        }
+                    },
+                    onFailure = { error ->
+                        _messageEvent.emit("匯入失敗: ${error.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                _messageEvent.emit("解析失敗: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isExportingOrImporting = false) }
+            }
+        }
+    }
+
     private fun parseOwnerAndRepo(input1: String, input2: String): Pair<String, String> {
-        val clean1 = input1.trim()
+        var clean1 = input1.trim()
         val clean2 = input2.trim()
 
         if (clean1.startsWith("http://") || clean1.startsWith("https://") || clean1.contains("github.com")) {
-            val stripped = clean1.substringAfter("github.com/").trim('/')
-            val parts = stripped.split("/")
+            clean1 = clean1.substringBefore("?").substringBefore("#")
+            val path = clean1.substringAfter("github.com/").trim('/')
+            val parts = path.split("/").filter { it.isNotBlank() }
             if (parts.size >= 2) {
-                return Pair(parts[0], parts[1])
+                return Pair(parts[0], parts[1].removeSuffix(".git"))
             }
         }
 
         if (clean1.contains("/") && clean2.isBlank()) {
-            val parts = clean1.split("/")
+            clean1 = clean1.substringBefore("?").substringBefore("#")
+            val parts = clean1.split("/").filter { it.isNotBlank() }
             if (parts.size >= 2) {
-                return Pair(parts[0], parts[1])
+                return Pair(parts[0], parts[1].removeSuffix(".git"))
             }
         }
 
-        return Pair(clean1, clean2)
+        return Pair(clean1, clean2.removeSuffix(".git"))
     }
 }
+

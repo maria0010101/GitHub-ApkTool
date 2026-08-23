@@ -28,6 +28,16 @@ interface GitProjectDao {
     @Delete
     fun deleteProject(project: GitProject): Int
 
+    @Query("SELECT * FROM git_projects")
+    fun getAllProjectsList(): List<GitProject>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertProjects(projects: List<GitProject>): List<Long>
+
+    @Query("DELETE FROM git_projects")
+    fun deleteAllProjects(): Int
+
     @Query("DELETE FROM git_projects WHERE id = :id")
     fun deleteProjectById(id: Long): Int
 }
+

@@ -84,11 +84,23 @@ fun AddEditProjectDialog(
                         style = MaterialTheme.typography.labelMedium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                    ) {
+                        SuggestionChip(
+                            onClick = {
+                                ownerOrUrl = "ReSukiSU/ReSukiSU"
+                                customName = "ReSukiSU"
+                            },
+                            label = { Text("ReSukiSU") }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         SuggestionChip(
                             onClick = {
                                 ownerOrUrl = "JunkFood02/Seal"
-                                customName = "Seal (影片下載器)"
+                                customName = "Seal"
                             },
                             label = { Text("Seal") }
                         )
@@ -99,14 +111,6 @@ fun AddEditProjectDialog(
                                 customName = "NewPipe"
                             },
                             label = { Text("NewPipe") }
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        SuggestionChip(
-                            onClick = {
-                                ownerOrUrl = "LawnchairLauncher/lawnchair"
-                                customName = "Lawnchair"
-                            },
-                            label = { Text("Lawnchair") }
                         )
                     }
                 }

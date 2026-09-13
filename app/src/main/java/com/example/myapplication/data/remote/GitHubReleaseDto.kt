@@ -8,6 +8,7 @@ data class GitHubReleaseDto(
     @SerializedName("name") val name: String? = null,
     @SerializedName("body") val body: String? = null,
     @SerializedName("published_at") val publishedAt: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null,
     @SerializedName("html_url") val htmlUrl: String? = null,
     @SerializedName("prerelease") val isPrerelease: Boolean = false,
     @SerializedName("draft") val isDraft: Boolean = false,
@@ -20,6 +21,9 @@ data class ReleaseAssetDto(
     @SerializedName("size") val size: Long = 0,
     @SerializedName("download_count") val downloadCount: Long = 0,
     @SerializedName("browser_download_url") val browserDownloadUrl: String = "",
-    @SerializedName("content_type") val contentType: String? = null
+    @SerializedName("content_type") val contentType: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("updated_at") val updatedAt: String? = null
 )
+
 

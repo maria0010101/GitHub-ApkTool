@@ -319,8 +319,11 @@ fun ProjectItemCard(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()) }
-    val formattedTime = remember(project.updatedAt) {
-        if (project.updatedAt > 0) dateFormat.format(Date(project.updatedAt)) else "未檢查"
+    val formattedCheckTime = remember(project.updatedAt) {
+        if (project.updatedAt > 0) dateFormat.format(Date(project.updatedAt)) else "未檢測"
+    }
+    val formattedReleaseTime = remember(project.releaseTime) {
+        if (project.releaseTime > 0) dateFormat.format(Date(project.releaseTime)) else "未知"
     }
 
     Card(
@@ -432,12 +435,21 @@ fun ProjectItemCard(
                     }
                 }
 
-                Text(
-                    text = "更新時間: $formattedTime",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "更新時間: $formattedReleaseTime",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "檢測時間: $formattedCheckTime",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
+
 
             if (project.latestApkName != null) {
                 Spacer(modifier = Modifier.height(6.dp))

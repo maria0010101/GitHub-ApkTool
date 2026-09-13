@@ -25,8 +25,10 @@ data class ProjectExportItem(
     val latestVersion: String? = null,
     val latestApkUrl: String? = null,
     val latestApkName: String? = null,
-    val updatedAt: Long = 0
+    val updatedAt: Long = 0,
+    val releaseTime: Long = 0
 )
+
 
 class GitProjectRepository(
     private val gitProjectDao: GitProjectDao,
@@ -69,11 +71,13 @@ class GitProjectRepository(
             val fetchResult = fetchLatestReleaseInfo(project.owner, project.repo, apiToken)
             if (fetchResult.isSuccess) {
                 val (release, apkAsset) = fetchResult.getOrThrow()
+                val parsedReleaseTime = parseIsoTimestamp(release.publishedAt ?: release.createdAt ?: apkAsset?.updatedAt)
                 val updatedProject = project.copy(
                     latestVersion = release.tagName,
                     latestApkUrl = apkAsset?.browserDownloadUrl ?: project.latestApkUrl,
                     latestApkName = apkAsset?.name ?: project.latestApkName,
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis(),
+                    releaseTime = if (parsedReleaseTime > 0) parsedReleaseTime else project.releaseTime
                 )
                 updateProject(updatedProject)
                 Result.success(updatedProject)
@@ -84,6 +88,7 @@ class GitProjectRepository(
             Result.failure(Exception(e.message ?: "網路連線異常"))
         }
     }
+
 
     suspend fun fetchLatestReleaseInfo(
         owner: String,
@@ -139,7 +144,8 @@ class GitProjectRepository(
                 latestVersion = it.latestVersion,
                 latestApkUrl = it.latestApkUrl,
                 latestApkName = it.latestApkName,
-                updatedAt = it.updatedAt
+                updatedAt = it.updatedAt,
+                releaseTime = it.releaseTime
             )
         }
         val backupData = ProjectBackupData(projects = exportItems)
@@ -189,7 +195,8 @@ class GitProjectRepository(
                                 owner = owner,
                                 repo = repo,
                                 latestVersion = "未取得",
-                                updatedAt = System.currentTimeMillis()
+                                updatedAt = System.currentTimeMillis(),
+                                releaseTime = 0L
                             )
                         )
                     }
@@ -219,7 +226,8 @@ class GitProjectRepository(
                     latestVersion = item.latestVersion ?: existing?.latestVersion ?: "未取得",
                     latestApkUrl = item.latestApkUrl ?: existing?.latestApkUrl,
                     latestApkName = item.latestApkName ?: existing?.latestApkName,
-                    updatedAt = if (item.updatedAt > 0) item.updatedAt else System.currentTimeMillis()
+                    updatedAt = if (item.updatedAt > 0) item.updatedAt else System.currentTimeMillis(),
+                    releaseTime = if (item.releaseTime > 0) item.releaseTime else (existing?.releaseTime ?: 0L)
                 )
                 gitProjectDao.insertProject(project)
                 count++
@@ -258,5 +266,28 @@ class GitProjectRepository(
             ?: pool.firstOrNull()
             ?: apkAssets.first()
     }
+
+    companion object {
+        fun parseIsoTimestamp(isoString: String?): Long {
+            if (isoString.isNullOrBlank()) return 0L
+            return try {
+                java.time.OffsetDateTime.parse(isoString).toInstant().toEpochMilli()
+            } catch (e: Exception) {
+                try {
+                    java.time.Instant.parse(isoString).toEpochMilli()
+                } catch (e2: Exception) {
+                    try {
+                        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        }
+                        sdf.parse(isoString)?.time ?: 0L
+                    } catch (e3: Exception) {
+                        0L
+                    }
+                }
+            }
+        }
+    }
 }
+
 

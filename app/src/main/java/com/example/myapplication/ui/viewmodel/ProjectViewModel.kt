@@ -104,6 +104,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
 
             if (fetchResult.isSuccess) {
                 val (release, apkAsset) = fetchResult.getOrThrow()
+                val parsedReleaseTime = GitProjectRepository.parseIsoTimestamp(release.publishedAt ?: release.createdAt ?: apkAsset?.updatedAt)
                 val project = GitProject(
                     id = id,
                     name = finalName,
@@ -112,7 +113,8 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                     latestVersion = release.tagName,
                     latestApkUrl = apkAsset?.browserDownloadUrl,
                     latestApkName = apkAsset?.name ?: "${repo}_${release.tagName}.apk",
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis(),
+                    releaseTime = parsedReleaseTime
                 )
                 repository.insertProject(project)
                 _messageEvent.emit("已成功儲存專案「$finalName」，版本：${release.tagName}")
@@ -126,7 +128,8 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                     latestVersion = "未取得",
                     latestApkUrl = null,
                     latestApkName = null,
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis(),
+                    releaseTime = 0L
                 )
                 repository.insertProject(project)
                 _messageEvent.emit("已儲存專案，但檢查 Release 失敗：${fetchResult.exceptionOrNull()?.message}")

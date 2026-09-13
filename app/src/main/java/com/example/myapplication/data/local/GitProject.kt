@@ -12,5 +12,7 @@ data class GitProject(
     val latestVersion: String,     // 最新 Release Tag (例如: v1.2.0)
     val latestApkUrl: String?,     // APK 下載連結 (browser_download_url)
     val latestApkName: String?,    // APK 檔名
-    val updatedAt: Long            // 最後更新時間戳
+    val updatedAt: Long,           // 本地最後檢測時間戳
+    val releaseTime: Long = 0      // GitHub Release 最後更新/發布時間戳
 )
+

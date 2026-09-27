@@ -32,6 +32,7 @@ data class ProjectUiState(
     val isExportingOrImporting: Boolean = false,
     val searchQuery: String = "",
     val githubToken: String = "",
+    val layoutMode: String = "auto", // "auto", "tv", "mobile"
     val activeCheckingProjectIds: Set<Long> = emptySet()
 )
 
@@ -43,7 +44,8 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
 
     private val _uiState = MutableStateFlow(
         ProjectUiState(
-            githubToken = prefs.getString("github_token", "") ?: ""
+            githubToken = prefs.getString("github_token", "") ?: "",
+            layoutMode = prefs.getString("layout_mode", "auto") ?: "auto"
         )
     )
     val uiState: StateFlow<ProjectUiState> = _uiState.asStateFlow()
@@ -80,6 +82,20 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         _uiState.update { it.copy(githubToken = trimmed) }
         viewModelScope.launch {
             _messageEvent.emit("GitHub Token 設定已儲存")
+        }
+    }
+
+    fun saveLayoutMode(mode: String) {
+        val validMode = if (mode in listOf("auto", "tv", "mobile")) mode else "auto"
+        prefs.edit().putString("layout_mode", validMode).apply()
+        _uiState.update { it.copy(layoutMode = validMode) }
+        viewModelScope.launch {
+            val label = when (validMode) {
+                "tv" -> "電視 / 大螢幕佈局"
+                "mobile" -> "手機標準佈局"
+                else -> "自動偵測佈局"
+            }
+            _messageEvent.emit("已切換為：$label")
         }
     }
 

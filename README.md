@@ -29,6 +29,7 @@
 * 📲 **一鍵安裝 APK**：整合 `FileProvider` 與安裝 Intent，下載完成後可直接在 App 內啟動安裝程式。
 * 🔍 **即時搜尋與過濾**：快速搜尋 Repo 名稱、擁有者或自訂顯示名稱。
 * 🔑 **GitHub API Token 支援**：可於設定中設定 Personal Access Token (PAT)，輕鬆突破每小時 60 次的匿名速率限制。
+* 📺 **Android TV 與大螢幕支援**：深度相容 Android TV、電視盒與大螢幕平板，提供 Android TV Leanback Launcher 橫幅 Banner、遙控器 D-pad 方向鍵焦點導航反饋、專屬電視多欄網格排版與一鍵加入熱門電視應用。
 * 🎨 **Material 3 現代化 UI**：全新 3D 圖示、流暢的動畫、深色模式適配與優雅的雙時間卡片式設計。
 
 ---
@@ -38,12 +39,13 @@
 | 模組 | 使用技術 |
 | :--- | :--- |
 | **UI 框架** | Jetpack Compose (Material 3) + FlowRow / AnimatedVisibility |
+| **電視與大螢幕** | Android TV Leanback Launcher + D-pad Focus Feedback + Adaptive Grid |
 | **架構模式** | Clean Architecture + MVVM (Model-View-ViewModel) |
 | **非同步處理** | Kotlin Coroutines + Flow + StateFlow / SharedFlow |
 | **本機資料庫** | Room Database + KSP (Kotlin Symbol Processing) |
 | **網路請求** | Retrofit 2 + OkHttp 3 + Gson Converter + HttpLoggingInterceptor |
 | **檔案下載** | Android 原生 DownloadManager + FileProvider |
-| **支援系統** | minSdk 26 (Android 8.0) / targetSdk 36 (Android 15+) |
+| **支援系統** | minSdk 26 (Android 8.0) / targetSdk 36 (Android 15+) 相容手機與 Android TV |
 
 ---
 
@@ -66,18 +68,37 @@ com.example.myapplication/
 │   └── ApkDownloader.kt
 ├── ui/
 │   ├── screens/        # Compose UI 畫面與對話框
-│   │   ├── ProjectListScreen.kt
+│   │   ├── ProjectListScreen.kt     # 手機標準佈局
+│   │   ├── TvProjectListScreen.kt   # Android TV 專屬多欄網格佈局
 │   │   ├── AddEditProjectDialog.kt
 │   │   ├── ImportExportDialog.kt
 │   │   └── SettingsDialog.kt
 │   ├── theme/          # Material 3 主題配置
 │   └── viewmodel/      # ProjectViewModel 狀態管理
+├── util/
+│   └── DeviceUtils.kt  # Android TV / 螢幕特徵偵測與佈局切換
 └── MainActivity.kt     # App 主要進入點與動態權限請求
 ```
 
 ---
 
 ## 📋 版本更新日誌 (Changelog)
+
+### v0.4.1 (2026-09-27)
+* 📺 **Android TV 深度相容與安裝支援**：
+  * AndroidManifest 宣告 `android.software.leanback` 與 `android.hardware.touchscreen` 相容標籤（`required="false"`），確保手機與 Android TV 雙向通用。
+  * 支援 Android TV 啟動器 `LEANBACK_LAUNCHER` 進入點，並配置標準 16:9 電視專屬橫幅 Banner（`tv_banner.png`）。
+* 🖥️ **專屬 Android TV UI 佈局 (TvProjectListScreen)**：
+  * 打造專為 10 呎客廳視距設計的大螢幕多欄自適應卡片網格佈局（`LazyVerticalGrid`）。
+  * 整合 TV 頂部全功能控制欄，包含放大圖示與文字導航按鈕。
+  * 專屬電視空狀態畫面：支援一鍵點選直接加入電視熱門開源專案（如 `SmartTube`、`ReSukiSU`、`Seal`、`NewPipe`、`Kodi`）。
+* 🎮 **電視遙控器 D-pad 焦點導航支援**：
+  * 全面適配電視遙控器上下左右方向鍵與確認鍵，卡片與按鈕獲焦時具備平滑放大縮放動畫、高亮主題色外框與懸浮陰影。
+* 🔀 **多模式介面自由切換**：
+  * 設定對話框新增「介面佈局模式」，支援「自動偵測」、「電視 / 大螢幕佈局」、「手機標準佈局」，頂部欄亦提供快捷切換。
+* 📦 **版本升級與簽章打包**：
+  * 升級版本號至 `versionCode: 5`、`versionName: 0.4.1`。
+  * 產出並備份正式發佈之 `GitHub-ApkTool-v0.4.1.apk`。
 
 ### v0.4 (2026-09-13)
 * 🕒 **Release 更新時間與檢測時間分離**：

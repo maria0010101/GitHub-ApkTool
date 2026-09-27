@@ -1,6 +1,9 @@
 package com.example.myapplication.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.local.GitProject
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddEditProjectDialog(
     projectToEdit: GitProject? = null,
@@ -59,7 +63,7 @@ fun AddEditProjectDialog(
                         errorMessage = null
                     },
                     label = { Text("GitHub 網址或 owner/repo") },
-                    placeholder = { Text("例如: JunkFood02/Seal") },
+                    placeholder = { Text("例如: yuliskov/SmartTube 或 JunkFood02/Seal") },
                     singleLine = true,
                     isError = errorMessage != null,
                     supportingText = errorMessage?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -84,11 +88,18 @@ fun AddEditProjectDialog(
                         style = MaterialTheme.typography.labelMedium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        SuggestionChip(
+                            onClick = {
+                                ownerOrUrl = "yuliskov/SmartTube"
+                                customName = "SmartTube"
+                            },
+                            label = { Text("SmartTube (TV)") }
+                        )
                         SuggestionChip(
                             onClick = {
                                 ownerOrUrl = "ReSukiSU/ReSukiSU"
@@ -96,7 +107,6 @@ fun AddEditProjectDialog(
                             },
                             label = { Text("ReSukiSU") }
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
                         SuggestionChip(
                             onClick = {
                                 ownerOrUrl = "JunkFood02/Seal"
@@ -104,13 +114,19 @@ fun AddEditProjectDialog(
                             },
                             label = { Text("Seal") }
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
                         SuggestionChip(
                             onClick = {
                                 ownerOrUrl = "TeamNewPipe/NewPipe"
                                 customName = "NewPipe"
                             },
                             label = { Text("NewPipe") }
+                        )
+                        SuggestionChip(
+                            onClick = {
+                                ownerOrUrl = "xbmc/xbmc"
+                                customName = "Kodi"
+                            },
+                            label = { Text("Kodi (TV)") }
                         )
                     }
                 }

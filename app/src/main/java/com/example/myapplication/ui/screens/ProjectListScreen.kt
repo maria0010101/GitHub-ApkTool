@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.InstallMobile
 import androidx.compose.material3.Button
@@ -169,6 +170,9 @@ fun ProjectListScreen(viewModel: ProjectViewModel) {
                             Icon(Icons.Default.Refresh, contentDescription = "一鍵檢查全部更新")
                         }
                     }
+                    IconButton(onClick = { viewModel.saveLayoutMode("tv") }) {
+                        Icon(Icons.Default.Tv, contentDescription = "切換至電視版佈局")
+                    }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(Icons.Default.Settings, contentDescription = "設定")
                     }
@@ -276,9 +280,13 @@ fun ProjectListScreen(viewModel: ProjectViewModel) {
     if (showSettingsDialog) {
         SettingsDialog(
             currentToken = uiState.githubToken,
+            currentLayoutMode = uiState.layoutMode,
             onDismiss = { showSettingsDialog = false },
             onSaveToken = { token ->
                 viewModel.saveGithubToken(token)
+            },
+            onSaveLayoutMode = { mode ->
+                viewModel.saveLayoutMode(mode)
             }
         )
     }

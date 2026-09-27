@@ -8,11 +8,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.ui.screens.ProjectListScreen
+import com.example.myapplication.ui.screens.TvProjectListScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.viewmodel.ProjectViewModel
+import com.example.myapplication.util.DeviceUtils
 
 class MainActivity : ComponentActivity() {
 
@@ -29,8 +34,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
+                val context = LocalContext.current
                 val viewModel: ProjectViewModel = viewModel()
-                ProjectListScreen(viewModel = viewModel)
+                val uiState by viewModel.uiState.collectAsState()
+
+                val isTv = DeviceUtils.isTvModeActive(context, uiState.layoutMode)
+                if (isTv) {
+                    TvProjectListScreen(viewModel = viewModel)
+                } else {
+                    ProjectListScreen(viewModel = viewModel)
+                }
             }
         }
     }
